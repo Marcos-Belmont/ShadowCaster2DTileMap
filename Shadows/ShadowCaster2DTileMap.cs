@@ -8,15 +8,13 @@ using UnityEngine.Tilemaps;
 [RequireComponent(typeof(TilemapRenderer))]
 [RequireComponent(typeof(CompositeShadowCaster2D))]
 [RequireComponent(typeof(CompositeCollider2D))]
-public class ShadowCaster2DTileMap : MonoBehaviour
+public class ShadowCaster2DTileMapComposite : MonoBehaviour
 {
-#if UNITY_EDITOR
-
     #region PARAMETROS INSPECTOR
     [Space]
     [Tooltip("Specifies how to draw the shadow used with the ShadowCaster2D.")]
-    [SerializeField] CastingOption castingOption;
-    enum CastingOption
+    public CastingOption castingOption;
+    [HideInInspector] public enum CastingOption
     {
         SelfShadow,
         CastShadow,
@@ -24,18 +22,17 @@ public class ShadowCaster2DTileMap : MonoBehaviour
         NoShadow
     }
 
+    //Aplica a logica de sorting layers.
+    [HideInInspector] public int selectedSortingLayers = 0;
     [HideInInspector] public int[] sortingLayerIDs;
-    [HideInInspector] public bool isNull = false;
-    [HideInInspector] public byte countZeros = 0;
 
     [Space]
     [Tooltip("Used to define the reduction of the shadow detection format.")]
     [Range(0f, 0.5f)]
-    [SerializeField] private float shapeReduction = 0;
-
+    public float shapeReduction = 0;
     #endregion
 
-    private CompositeCollider2D compositeCollider;
+    private CompositeCollider2D _compositeCollider;
     private Tilemap tilemap;
     private TilemapRenderer tilemapRenderer;
 
@@ -48,15 +45,15 @@ public class ShadowCaster2DTileMap : MonoBehaviour
         DestroyAllShadows();
 
         #region ELEMENTOS TILEMAP
-        compositeCollider = GetComponent<CompositeCollider2D>();
+        _compositeCollider = GetComponent<CompositeCollider2D>();
         tilemap = GetComponent <Tilemap>();
         tilemapRenderer = GetComponent<TilemapRenderer>();
         #endregion
-        
-        for (int i = 0; i < compositeCollider.pathCount; i++)
+
+        for (int i = 0; i < _compositeCollider.pathCount; i++)
         {
-            Vector2[] pathVertices = new Vector2[compositeCollider.GetPathPointCount(i)];
-            compositeCollider.GetPath(i, pathVertices);
+            Vector2[] pathVertices = new Vector2[_compositeCollider.GetPathPointCount(i)];
+            _compositeCollider.GetPath(i, pathVertices);
             GameObject shadowCaster = new GameObject("shadow_caster_" + i);
             shadowCaster.transform.parent = gameObject.transform;
             ShadowCaster2D shadowCasterComponent = shadowCaster.AddComponent<ShadowCaster2D>();
@@ -127,7 +124,7 @@ public class ShadowCaster2DTileMap : MonoBehaviour
             #region APLICANDO CONFIGURACOES
             shapePathField.SetValue(shadowCasterComponent, testPath);
             shapePathHashField.SetValue(shadowCasterComponent, Random.Range(int.MinValue, int.MaxValue));
-            sortingLayersField.SetValue(shadowCasterComponent, isNull == true ? null : sortingLayerIDs);
+            sortingLayersField.SetValue(shadowCasterComponent, selectedSortingLayers == 0 ? null : sortingLayerIDs);
             #endregion
         }
 
@@ -142,5 +139,4 @@ public class ShadowCaster2DTileMap : MonoBehaviour
         }
 
     }
-#endif
 }
