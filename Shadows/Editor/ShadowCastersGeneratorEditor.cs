@@ -3,42 +3,31 @@ using UnityEditor;
 using System.Linq;
 using System.Collections.Generic;
 
-[CustomEditor(typeof(ShadowCaster2DTileMap))]
+[CustomEditor(typeof(ShadowCaster2DTileMapComposite))]
 public class ShadowCastersGeneratorEditor : Editor
 {
-    const string EDITOR_SHADOW_CASTER = "EditorShadowCaster";
-    internal static int selectedLayerMask = 0;
-    ShadowCaster2DTileMap generator;
-    readonly GUIContent sortingLayersLabel = new("Target Sorting Layers", "Apply Shadows to the specified sorting layers.");
-
-    private void OnEnable()
-    {
-        selectedLayerMask = PlayerPrefs.HasKey(EDITOR_SHADOW_CASTER) ? PlayerPrefs.GetInt(EDITOR_SHADOW_CASTER) : 0;
-    }
+    readonly GUIContent _sortingLayersLabel = new("Target Sorting Layers", "Apply Shadows to the specified sorting layers.");
 
     public override void OnInspectorGUI()
     {
         DrawDefaultInspector();
-        generator = (ShadowCaster2DTileMap)target;
+        ShadowCaster2DTileMapComposite generator = (ShadowCaster2DTileMapComposite)target;
         EditorGUILayout.Space();
 
         // Cria o dropdown
-        selectedLayerMask = EditorGUILayout.MaskField(sortingLayersLabel, selectedLayerMask, GetSortingLayers());
-
-        generator.isNull = true;
+        generator.selectedSortingLayers = EditorGUILayout.MaskField(_sortingLayersLabel, generator.selectedSortingLayers, GetSortingLayers());
 
         // Atualiza a lista de Sorting Layers e seus IDs
-        generator.sortingLayerIDs = new int[GetSelectedSortingLayerIDs(selectedLayerMask).Count];
+        generator.sortingLayerIDs = new int[GetSelectedSortingLayerIDs(generator.selectedSortingLayers).Count];
 
         int count = 0;
-        foreach (int layerID in GetSelectedSortingLayerIDs(selectedLayerMask))
+        foreach (int layerID in GetSelectedSortingLayerIDs(generator.selectedSortingLayers))
         {
             generator.sortingLayerIDs[count] = layerID;
-            generator.countZeros = layerID == 0 && generator.countZeros < 2 ? (byte)(generator.countZeros+1) : generator.countZeros;
             count++;
         }
 
-        // Verifica se houve alguma alteração
+        // Verifica se houve alguma alteraÃ§Ã£o e atualiza
         if (GUI.changed)
         {
             EditorUtility.SetDirty(target);
@@ -62,8 +51,6 @@ public class ShadowCastersGeneratorEditor : Editor
 
         }
         #endregion
-
-        PlayerPrefs.SetInt("EditorShadowCaster", selectedLayerMask);
     }
 
     private string[] GetSortingLayers()
@@ -81,7 +68,6 @@ public class ShadowCastersGeneratorEditor : Editor
             if ((layerMask & (1 << i)) != 0)
             {
                 selectedLayerIDs.Add(layers[i].id);
-                generator.isNull = false;
             }
         }
 
